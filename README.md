@@ -1,10 +1,6 @@
-# Goose Overlay
+# Goose (WIP)
 
-Cross-platform desktop goose built with Tauri 2, Rust, and SvelteKit. The product goal is a lightweight overlay pet that can animate on screen, schedule hydration and posture reminders, and later add opt-in system interactions like cursor nudges.
-
-## Current Status
-
-The repository contains the initial desktop scaffold, a documented long-term implementation plan, and a first overlay prototype screen wired to a Rust bootstrap command.
+Cross-platform desktop lightweight overlay pet goose built with Tauri 2, Rust, and SvelteKit. The goose schedules your hydration and gives posture reminders, sometimes nudges your cursor for attention.
 
 ## Stack
 
@@ -26,13 +22,3 @@ Run the desktop app:
 ```bash
 npm run tauri dev
 ```
-
-Run frontend checks:
-
-```bash
-npm run check
-```
-
-## Planning
-
-The long-term agent execution plan lives in `docs/IMPLEMENTATION_PLAN.md`.
