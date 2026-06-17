@@ -29,6 +29,16 @@ bun run sprites:check
 
 The validator checks that required sprite groups exist, every frame stays inside atlas bounds, and every frame remains 128 by 128 pixels.
 
+## Rebuilding
+
+Run:
+
+```bash
+bun run sprites:rebuild
+```
+
+The rebuilder preserves the existing atlas JSON layout and redraws every frame from one canonical honk-aligned side-profile goose model. This keeps walk, idle, inspect, honk, and alert frames visually consistent while preserving stable frame names for Pixi.
+
 ## Refresh Rules
 
 - Keep generated source images outside the runtime bundle unless they are needed by the app.
