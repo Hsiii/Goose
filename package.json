@@ -11,6 +11,7 @@
     "format": "prettier --plugin prettier-plugin-svelte \"*.{js,ts,json,md}\" \"docs/**/*.md\" \"src/**/*.{js,ts,svelte,css,json}\" \"static/**/*.{js,ts,css,json,md}\" --write",
     "format:check": "prettier --plugin prettier-plugin-svelte \"*.{js,ts,json,md}\" \"docs/**/*.md\" \"src/**/*.{js,ts,svelte,css,json}\" \"static/**/*.{js,ts,css,json,md}\" --check",
     "prepare": "husky",
+    "release": "release-it --config release-it.config.cjs",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri"
@@ -35,6 +36,7 @@
     "lint-staged": "^17.0.7",
     "prettier": "^3.8.4",
     "prettier-plugin-svelte": "^4.1.1",
+    "release-it": "^20.2.0",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "typescript": "~5.6.2",
