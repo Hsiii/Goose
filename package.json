@@ -7,9 +7,18 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "npm run check",
+    "format": "prettier --plugin prettier-plugin-svelte \"*.{js,ts,json,md}\" \"docs/**/*.md\" \"src/**/*.{js,ts,svelte,css,json}\" \"static/**/*.{js,ts,css,json,md}\" --write",
+    "format:check": "prettier --plugin prettier-plugin-svelte \"*.{js,ts,json,md}\" \"docs/**/*.md\" \"src/**/*.{js,ts,svelte,css,json}\" \"static/**/*.{js,ts,css,json,md}\" --check",
+    "prepare": "husky",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,svelte,css,scss,html,json,md,yml,yaml}": [
+      "prettier --plugin prettier-plugin-svelte --write"
+    ]
   },
   "license": "MIT",
   "dependencies": {
@@ -22,6 +31,10 @@
     "@sveltejs/kit": "^2.9.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tauri-apps/cli": "^2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
+    "prettier": "^3.8.4",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "typescript": "~5.6.2",
