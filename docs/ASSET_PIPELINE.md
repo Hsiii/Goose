@@ -37,12 +37,13 @@ Run:
 bun run sprites:rebuild
 ```
 
-The rebuilder preserves the existing atlas JSON layout and redraws every frame from one canonical honk-aligned side-profile goose model. This keeps walk, idle, inspect, honk, and alert frames visually consistent while preserving stable frame names for Pixi.
+The rebuilder preserves the existing atlas JSON layout and redraws every frame from `tools/sprites/reference-goose.png`. That reference is the canonical pixel-art identity: tall upright neck, compact white body, black outline, orange beak, orange feet, and restrained grey feather shading. Rebuilds may add small pose offsets or beak-open variants, but they must not change the goose's style or proportions.
 
 ## Refresh Rules
 
 - Keep generated source images outside the runtime bundle unless they are needed by the app.
 - Do not use absolute local paths in asset tooling.
+- Keep `tools/sprites/reference-goose.png` as the source of truth for goose style and proportions.
 - Keep atlas frame names stable or update `animationManifest.ts` in the same commit.
 - Keep sprite dimensions stable unless renderer constants and validation rules change together.
 - Regenerate `static/favicon.png` from `src-tauri/icons/icon.png` when the application icon changes.
