@@ -1,23 +1,35 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Application, Assets, AnimatedSprite, Container } from "pixi.js";
+  import { Application, Assets, AnimatedSprite } from "pixi.js";
   import {
     createInitialGooseMotion,
     reconcileGooseMotionBounds,
     tickGooseMotion,
-  } from "$lib/engine/gooseMotion";
-  import type { GooseMotionBounds, GooseMotionSnapshot } from "$lib/types";
+  } from "$lib/goose/motion";
+  import {
+    buildGooseAnimations,
+    GOOSE_ATLAS_URL,
+    GOOSE_RENDERING,
+    type GooseAnimationSet,
+  } from "$lib/goose/animationManifest";
+  import type { GooseMotionBounds } from "$lib/types";
 
   let host: HTMLDivElement;
 
   function measureBounds(): GooseMotionBounds {
-    const width = Math.max(host.clientWidth, 220);
-    const height = Math.max(host.clientHeight, 180);
+    const width = Math.max(
+      host.clientWidth,
+      GOOSE_RENDERING.minimumViewportWidth,
+    );
+    const height = Math.max(
+      host.clientHeight,
+      GOOSE_RENDERING.minimumViewportHeight,
+    );
 
     return {
       width,
       height,
-      floorY: height - 120, // Adjusted due to taller standard sprite size
+      floorY: height - GOOSE_RENDERING.floorOffset,
     };
   }
 
@@ -36,35 +48,14 @@
     let bounds = measureBounds();
     let motion = createInitialGooseMotion(bounds);
     let previousState = motion.state;
+    let animations: GooseAnimationSet | null = null;
 
-    // Group sprites loosely based on extraction mapping
-    let animations: Record<string, any[]> = {};
-
-    Assets.load("/assets/goose_spritesheet.json").then((sheet) => {
-      // Create animations mapping based on the loaded sheet
-      animations["walk"] = [
-        sheet.textures["goose_walk_0"],
-        sheet.textures["goose_walk_1"],
-        sheet.textures["goose_walk_2"],
-        sheet.textures["goose_walk_3"],
-      ];
-      animations["idle"] = [
-        sheet.textures["goose_actions_0"],
-        sheet.textures["goose_actions_1"],
-        sheet.textures["goose_actions_2"],
-        sheet.textures["goose_actions_3"],
-      ];
-      animations["inspect"] = [
-        sheet.textures["goose_actions_4"],
-        sheet.textures["goose_actions_5"],
-        sheet.textures["goose_actions_6"],
-        sheet.textures["goose_actions_7"],
-      ];
-
-      actor = new AnimatedSprite(animations["idle"]);
+    Assets.load(GOOSE_ATLAS_URL).then((sheet) => {
+      animations = buildGooseAnimations(sheet);
+      actor = new AnimatedSprite(animations.idle);
       actor.anchor.set(0.5, 1);
-      actor.scale.set(0.6); // Tune down scale slightly as AI assets are often chunky
-      actor.animationSpeed = 0.08;
+      actor.scale.set(GOOSE_RENDERING.spriteScale);
+      actor.animationSpeed = GOOSE_RENDERING.animationSpeed.idle;
       actor.play();
 
       app.stage.addChild(actor);
@@ -83,15 +74,17 @@
       if (actor) {
         actor.position.set(motion.x, motion.y);
         // Correct facing direction
-        actor.scale.x = Math.abs(actor.scale.x) * motion.direction;
+        actor.scale.x =
+          Math.abs(GOOSE_RENDERING.spriteScale) * motion.direction;
 
         // State transition
-        if (previousState !== motion.state) {
+        if (animations && previousState !== motion.state) {
           previousState = motion.state;
-          const targetTextures = animations[motion.state] || animations["idle"];
+          const targetTextures = animations[motion.state];
 
           if (actor.textures !== targetTextures) {
             actor.textures = targetTextures;
+            actor.animationSpeed = GOOSE_RENDERING.animationSpeed[motion.state];
             actor.gotoAndPlay(0);
           }
         }

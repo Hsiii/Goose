@@ -2,20 +2,41 @@ import type {
   GooseDirection,
   GooseMotionBounds,
   GooseMotionSnapshot,
-} from "$lib/types";
+} from "./types";
 
 const SIDE_PADDING = 56;
+const ARRIVAL_DISTANCE = 2;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+function randomBetween(min: number, max: number): number {
+  return min + Math.random() * (max - min);
 }
 
 function usableWidth(bounds: GooseMotionBounds): number {
   return Math.max(bounds.width - SIDE_PADDING * 2, 1);
 }
 
+function maxX(bounds: GooseMotionBounds): number {
+  return Math.max(bounds.width - SIDE_PADDING, SIDE_PADDING);
+}
+
 function pickTargetX(bounds: GooseMotionBounds): number {
   return SIDE_PADDING + Math.random() * usableWidth(bounds);
+}
+
+function settleAtFloor(
+  snapshot: GooseMotionSnapshot,
+  bounds: GooseMotionBounds,
+): GooseMotionSnapshot {
+  return {
+    ...snapshot,
+    x: clamp(snapshot.x, SIDE_PADDING, maxX(bounds)),
+    y: bounds.floorY,
+    targetX: clamp(snapshot.targetX, SIDE_PADDING, maxX(bounds)),
+  };
 }
 
 function nextIdleState(
@@ -23,14 +44,12 @@ function nextIdleState(
   bounds: GooseMotionBounds,
 ): GooseMotionSnapshot {
   return {
-    ...snapshot,
-    x: clamp(snapshot.x, SIDE_PADDING, bounds.width - SIDE_PADDING),
-    y: bounds.floorY,
+    ...settleAtFloor(snapshot, bounds),
     targetX: snapshot.x,
     speed: 0,
     state: "idle",
     stateTimerMs: 0,
-    stateDurationMs: 1400 + Math.random() * 2200,
+    stateDurationMs: randomBetween(1400, 3600),
   };
 }
 
@@ -39,14 +58,26 @@ function nextInspectState(
   bounds: GooseMotionBounds,
 ): GooseMotionSnapshot {
   return {
-    ...snapshot,
-    x: clamp(snapshot.x, SIDE_PADDING, bounds.width - SIDE_PADDING),
-    y: bounds.floorY,
+    ...settleAtFloor(snapshot, bounds),
     targetX: snapshot.x,
     speed: 0,
     state: "inspect",
     stateTimerMs: 0,
-    stateDurationMs: 900 + Math.random() * 1200,
+    stateDurationMs: randomBetween(900, 2100),
+  };
+}
+
+function nextHonkState(
+  snapshot: GooseMotionSnapshot,
+  bounds: GooseMotionBounds,
+): GooseMotionSnapshot {
+  return {
+    ...settleAtFloor(snapshot, bounds),
+    targetX: snapshot.x,
+    speed: 0,
+    state: "honk",
+    stateTimerMs: 0,
+    stateDurationMs: randomBetween(700, 1200),
   };
 }
 
@@ -58,16 +89,31 @@ function nextWalkState(
   const direction: GooseDirection = targetX >= snapshot.x ? 1 : -1;
 
   return {
-    ...snapshot,
-    x: clamp(snapshot.x, SIDE_PADDING, bounds.width - SIDE_PADDING),
-    y: bounds.floorY,
+    ...settleAtFloor(snapshot, bounds),
     targetX,
     direction,
-    speed: 38 + Math.random() * 24,
+    speed: randomBetween(38, 62),
     state: "walk",
     stateTimerMs: 0,
-    stateDurationMs: 3200 + Math.random() * 2200,
+    stateDurationMs: randomBetween(3200, 5400),
   };
+}
+
+function nextAmbientState(
+  snapshot: GooseMotionSnapshot,
+  bounds: GooseMotionBounds,
+): GooseMotionSnapshot {
+  const roll = Math.random();
+
+  if (roll > 0.76) {
+    return nextHonkState(snapshot, bounds);
+  }
+
+  if (roll > 0.38) {
+    return nextInspectState(snapshot, bounds);
+  }
+
+  return nextIdleState(snapshot, bounds);
 }
 
 export function createInitialGooseMotion(
@@ -92,14 +138,7 @@ export function reconcileGooseMotionBounds(
   snapshot: GooseMotionSnapshot,
   bounds: GooseMotionBounds,
 ): GooseMotionSnapshot {
-  const maxX = Math.max(bounds.width - SIDE_PADDING, SIDE_PADDING);
-
-  return {
-    ...snapshot,
-    x: clamp(snapshot.x, SIDE_PADDING, maxX),
-    targetX: clamp(snapshot.targetX, SIDE_PADDING, maxX),
-    y: bounds.floorY,
-  };
+  return settleAtFloor(snapshot, bounds);
 }
 
 export function tickGooseMotion(
@@ -137,22 +176,20 @@ export function tickGooseMotion(
     };
 
     if (
-      Math.abs(nextSnapshot.targetX - nextSnapshot.x) <= 2 ||
+      Math.abs(nextSnapshot.targetX - nextSnapshot.x) <= ARRIVAL_DISTANCE ||
       nextSnapshot.stateTimerMs >= nextSnapshot.stateDurationMs
     ) {
-      return Math.random() > 0.55
-        ? nextIdleState(nextSnapshot, bounds)
-        : nextInspectState(nextSnapshot, bounds);
+      return nextAmbientState(nextSnapshot, bounds);
     }
 
-    return reconcileGooseMotionBounds(nextSnapshot, bounds);
+    return settleAtFloor(nextSnapshot, bounds);
   }
 
   if (nextSnapshot.stateTimerMs < nextSnapshot.stateDurationMs) {
-    return reconcileGooseMotionBounds(nextSnapshot, bounds);
+    return settleAtFloor(nextSnapshot, bounds);
   }
 
-  if (nextSnapshot.state === "inspect") {
+  if (nextSnapshot.state === "inspect" || nextSnapshot.state === "honk") {
     return Math.random() > 0.35
       ? nextWalkState(nextSnapshot, bounds)
       : nextIdleState(nextSnapshot, bounds);
@@ -160,5 +197,5 @@ export function tickGooseMotion(
 
   return Math.random() > 0.25
     ? nextWalkState(nextSnapshot, bounds)
-    : nextInspectState(nextSnapshot, bounds);
+    : nextAmbientState(nextSnapshot, bounds);
 }

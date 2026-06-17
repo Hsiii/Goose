@@ -12,6 +12,9 @@
 
 <style>
   :global(html, body) {
+    --goose-overlay-width: 100vw;
+    --goose-overlay-height: 100vh;
+
     margin: 0;
     width: 100%;
     height: 100%;
@@ -22,8 +25,8 @@
   .overlay-shell {
     position: fixed;
     inset: 0;
-    width: 100vw;
-    height: 100vh;
+    width: var(--goose-overlay-width);
+    height: var(--goose-overlay-height);
     background: transparent;
     pointer-events: none;
   }
