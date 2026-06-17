@@ -44,12 +44,14 @@ Build a cross-platform desktop pet for macOS and Windows that lives in a transpa
 Goal: establish the product shell and a visible goose prototype.
 
 Tasks:
+
 - Configure a transparent always-on-top overlay window.
 - Replace the template screen with a product-specific overlay prototype.
 - Expose a native bootstrap command for platform and default settings.
 - Document the roadmap in-repo.
 
 Definition of done:
+
 - App launches with product metadata.
 - Overlay UI no longer contains template content.
 - Frontend can fetch initial state from Rust.
@@ -59,11 +61,13 @@ Definition of done:
 Goal: render the goose as an animated actor instead of a static prototype.
 
 Tasks:
+
 - Add PixiJS.
 - Load sprite sheets and define initial animation states: idle, walk, honk, sleep, alert.
 - Implement screen-bounded movement and idle animation timing.
 
 Definition of done:
+
 - Goose visibly animates.
 - Renderer remains lightweight while idle.
 
@@ -72,12 +76,14 @@ Definition of done:
 Goal: ship hydration and posture reminders before any disruptive interaction.
 
 Tasks:
+
 - Create reminder scheduling with persisted timestamps.
 - Add snooze and dismiss behavior.
 - Trigger native notifications and in-overlay reminder states.
 - Respect quiet hours.
 
 Definition of done:
+
 - Reminder cadence survives restart.
 - Reminders do not spam after sleep or wake.
 
@@ -86,12 +92,14 @@ Definition of done:
 Goal: make behavior context-aware and permission-safe.
 
 Tasks:
+
 - Implement idle detection.
 - Add startup-on-login.
 - Add permission checks for macOS accessibility.
 - Display supported and unsupported capability states in UI.
 
 Definition of done:
+
 - Missing permissions degrade gracefully.
 - Idle state influences goose behavior.
 
@@ -100,12 +108,14 @@ Definition of done:
 Goal: add bounded cursor interaction without making the app hostile.
 
 Tasks:
+
 - Add Enigo.
 - Implement small cursor nudges only.
 - Protect with cooldowns, feature flags, and work mode.
 - Avoid true drag-and-hold interactions in the first release.
 
 Definition of done:
+
 - Mouse interaction is disabled by default.
 - Users can instantly pause or disable the feature.
 
@@ -114,11 +124,13 @@ Definition of done:
 Goal: produce stable Windows and macOS builds.
 
 Tasks:
+
 - Add packaging and release automation.
 - Validate multi-monitor, high-DPI, full-screen, and sleep/wake behavior.
 - Add logging for overlay and permission failures.
 
 Definition of done:
+
 - App installs and starts cleanly on both target platforms.
 
 ## Working Backlog
