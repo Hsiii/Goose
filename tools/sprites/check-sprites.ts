@@ -1,0 +1,70 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+interface AtlasFrame {
+  frame: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+}
+
+interface Atlas {
+  frames: Record<string, AtlasFrame>;
+  meta: {
+    image: string;
+    size: {
+      w: number;
+      h: number;
+    };
+  };
+}
+
+const atlasPath = join(
+  import.meta.dir,
+  "../../static/assets/goose_spritesheet.json",
+);
+const atlas = JSON.parse(readFileSync(atlasPath, "utf8")) as Atlas;
+
+const requiredGroups = {
+  goose_walk: 4,
+  goose_actions: 8,
+  goose_reminders: 6,
+} as const;
+
+const failures: string[] = [];
+
+for (const [group, minimumFrames] of Object.entries(requiredGroups)) {
+  const frameCount = Object.keys(atlas.frames).filter((frameName) =>
+    frameName.startsWith(`${group}_`),
+  ).length;
+
+  if (frameCount < minimumFrames) {
+    failures.push(
+      `${group} has ${frameCount} frame(s), expected at least ${minimumFrames}`,
+    );
+  }
+}
+
+for (const [frameName, { frame }] of Object.entries(atlas.frames)) {
+  const withinWidth = frame.x >= 0 && frame.x + frame.w <= atlas.meta.size.w;
+  const withinHeight = frame.y >= 0 && frame.y + frame.h <= atlas.meta.size.h;
+
+  if (!withinWidth || !withinHeight) {
+    failures.push(`${frameName} is outside atlas bounds`);
+  }
+
+  if (frame.w !== 128 || frame.h !== 128) {
+    failures.push(`${frameName} is ${frame.w}x${frame.h}, expected 128x128`);
+  }
+}
+
+if (failures.length > 0) {
+  console.error(failures.join("\n"));
+  process.exit(1);
+}
+
+console.log(
+  `Sprite atlas OK: ${Object.keys(atlas.frames).length} frames in ${atlas.meta.image}`,
+);
