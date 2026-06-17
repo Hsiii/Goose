@@ -45,13 +45,18 @@ interface Pose {
   dx: number;
   dy: number;
   shear: number;
+  scaleX: number;
+  scaleY: number;
+  footStride: number | null;
   openBeak: number;
+  hydrationDrop: number;
 }
 
 interface Placement {
   x: number;
   y: number;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
   shear: number;
 }
 
@@ -77,6 +82,8 @@ const transparent: Color = { r: 0, g: 0, b: 0, a: 0 };
 const outline: Color = { r: 0, g: 0, b: 0, a: 255 };
 const orange: Color = { r: 224, g: 94, b: 24, a: 255 };
 const orangeShade: Color = { r: 151, g: 67, b: 33, a: 255 };
+const water: Color = { r: 77, g: 165, b: 236, a: 255 };
+const waterShade: Color = { r: 31, g: 103, b: 185, a: 255 };
 
 for (let index = 0; index < sheet.data.length; index += 4) {
   sheet.data[index] = transparent.r;
@@ -212,6 +219,44 @@ const beakBounds = findBounds((x, y) => {
     color.b < 80
   );
 });
+const feetBounds = findBounds((x, y) => {
+  const color = getReferencePixel(x, y);
+
+  return (
+    isSpritePixel(x, y) &&
+    y > spriteBounds.y + spriteBounds.height * 0.68 &&
+    color.r > 120 &&
+    color.g > 35 &&
+    color.g < 140 &&
+    color.b < 90
+  );
+});
+
+function isFootPixel(x: number, y: number): boolean {
+  const color = getReferencePixel(x, y);
+
+  return (
+    y >= feetBounds.y &&
+    color.r > 120 &&
+    color.g > 35 &&
+    color.g < 150 &&
+    color.b < 100
+  );
+}
+
+function fillRect(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: Color,
+): void {
+  for (let yy = Math.floor(y); yy < y + height; yy += 1) {
+    for (let xx = Math.floor(x); xx < x + width; xx += 1) {
+      setSheetPixel(xx, yy, color);
+    }
+  }
+}
 
 function fillPolygon(points: Point[], color: Color): void {
   const minX = Math.floor(Math.min(...points.map((point) => point.x)));
@@ -256,9 +301,9 @@ function mapPoint(point: Point, placement: Placement): Point {
   return {
     x:
       placement.x +
-      localX * placement.scale +
-      placement.shear * (localY - spriteBounds.height / 2) * placement.scale,
-    y: placement.y + localY * placement.scale,
+      localX * placement.scaleX +
+      placement.shear * (localY - spriteBounds.height / 2) * placement.scaleY,
+    y: placement.y + localY * placement.scaleY,
   };
 }
 
@@ -298,6 +343,98 @@ function drawOpenBeak(placement: Placement, amount: number): void {
   );
 }
 
+function drawFoot(x: number, y: number, stride: number): void {
+  fillRect(x - 2, y - 9, 5, 10, outline);
+  fillRect(x - 1, y - 8, 3, 8, orange);
+  fillRect(x + stride - 2, y - 2, 13, 5, outline);
+  fillRect(x + stride, y - 1, 10, 3, orange);
+}
+
+function drawPoseFeet(placement: Placement, pose: Pose): void {
+  if (pose.footStride === null) {
+    return;
+  }
+
+  const leftFoot = mapPoint(
+    {
+      x: feetBounds.x + feetBounds.width * 0.25,
+      y: feetBounds.y + feetBounds.height,
+    },
+    placement,
+  );
+  const rightFoot = mapPoint(
+    {
+      x: feetBounds.x + feetBounds.width * 0.72,
+      y: feetBounds.y + feetBounds.height,
+    },
+    placement,
+  );
+
+  drawFoot(Math.round(leftFoot.x), Math.round(leftFoot.y), pose.footStride);
+  drawFoot(Math.round(rightFoot.x), Math.round(rightFoot.y), -pose.footStride);
+}
+
+function fillEllipse(
+  centerX: number,
+  centerY: number,
+  radiusX: number,
+  radiusY: number,
+  color: Color,
+): void {
+  const minX = Math.floor(centerX - radiusX);
+  const maxX = Math.ceil(centerX + radiusX);
+  const minY = Math.floor(centerY - radiusY);
+  const maxY = Math.ceil(centerY + radiusY);
+
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) {
+      const dx = (x + 0.5 - centerX) / radiusX;
+      const dy = (y + 0.5 - centerY) / radiusY;
+
+      if (dx * dx + dy * dy <= 1) {
+        setSheetPixel(x, y, color);
+      }
+    }
+  }
+}
+
+function drawHydrationDrop(placement: Placement, amount: number): void {
+  if (amount <= 0) {
+    return;
+  }
+
+  const beakEnd = mapPoint(
+    {
+      x: beakBounds.x + beakBounds.width,
+      y: beakBounds.y + beakBounds.height * 0.55,
+    },
+    placement,
+  );
+  const x = Math.round(beakEnd.x + 8);
+  const y = Math.round(beakEnd.y + 7 - amount * 2);
+  const height = 9 + Math.round(amount * 3);
+
+  fillPolygon(
+    [
+      { x, y: y - height },
+      { x: x + 8, y: y - 2 },
+      { x, y: y + 6 },
+      { x: x - 8, y: y - 2 },
+    ],
+    outline,
+  );
+  fillPolygon(
+    [
+      { x, y: y - height + 2 },
+      { x: x + 5, y: y - 2 },
+      { x, y: y + 3 },
+      { x: x - 5, y: y - 2 },
+    ],
+    water,
+  );
+  fillEllipse(x + 2, y - 2, 2, 3, waterShade);
+}
+
 function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
   const targetHeight = 110;
   const targetWidth = 82;
@@ -305,12 +442,13 @@ function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
     targetHeight / spriteBounds.height,
     targetWidth / spriteBounds.width,
   );
-  const scaledWidth = spriteBounds.width * scale;
-  const scaledHeight = spriteBounds.height * scale;
+  const scaledWidth = spriteBounds.width * scale * pose.scaleX;
+  const scaledHeight = spriteBounds.height * scale * pose.scaleY;
   const placement: Placement = {
     x: frame.x + (frame.w - scaledWidth) / 2 + pose.dx,
     y: frame.y + frame.h - 7 - scaledHeight + pose.dy,
-    scale,
+    scaleX: scale * pose.scaleX,
+    scaleY: scale * pose.scaleY,
     shear: pose.shear,
   };
 
@@ -321,14 +459,14 @@ function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
 
   for (let y = minY; y <= maxY; y += 1) {
     for (let x = minX; x <= maxX; x += 1) {
-      const localY = (y - placement.y) / placement.scale;
+      const localY = (y - placement.y) / placement.scaleY;
       const localX =
         (x -
           placement.x -
           placement.shear *
             (localY - spriteBounds.height / 2) *
-            placement.scale) /
-        placement.scale;
+            placement.scaleY) /
+        placement.scaleX;
       const sourceX = spriteBounds.x + Math.round(localX);
       const sourceY = spriteBounds.y + Math.round(localY);
 
@@ -337,7 +475,8 @@ function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
         sourceX >= spriteBounds.x + spriteBounds.width ||
         sourceY < spriteBounds.y ||
         sourceY >= spriteBounds.y + spriteBounds.height ||
-        !isSpritePixel(sourceX, sourceY)
+        !isSpritePixel(sourceX, sourceY) ||
+        (pose.footStride !== null && isFootPixel(sourceX, sourceY))
       ) {
         continue;
       }
@@ -346,7 +485,9 @@ function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
     }
   }
 
+  drawPoseFeet(placement, pose);
   drawOpenBeak(placement, pose.openBeak);
+  drawHydrationDrop(placement, pose.hydrationDrop);
 }
 
 function poseForFrame(frameName: string): Pose {
@@ -359,28 +500,57 @@ function poseForFrame(frameName: string): Pose {
     return {
       dx: Math.round(counterWave * 2),
       dy: Math.round(wave * 2),
-      shear: wave * 0.045,
+      shear: wave * 0.055,
+      scaleX: 1,
+      scaleY: 1,
+      footStride: Math.round(wave * 5),
       openBeak: 0,
+      hydrationDrop: 0,
     };
   }
 
   if (frameName.startsWith("goose_reminders_")) {
+    const hydration = index >= 6;
+
     return {
       dx: 0,
       dy: Math.round(wave * 1.5) - 1,
       shear: counterWave * 0.025,
-      openBeak: 0.35 + Math.max(0, wave) * 0.65,
+      scaleX: 1,
+      scaleY: 1,
+      footStride: null,
+      openBeak: hydration ? 0.1 : 0.35 + Math.max(0, wave) * 0.65,
+      hydrationDrop: hydration ? 0.6 + Math.max(0, wave) * 0.4 : 0,
     };
   }
 
   const actionSet = Math.floor(index / 4);
+
+  if (actionSet === 1) {
+    const turnScale = [1, 0.72, 0.44, 0.72][index % 4] ?? 1;
+
+    return {
+      dx: 0,
+      dy: Math.round(Math.abs(wave)),
+      shear: wave * 0.02,
+      scaleX: turnScale,
+      scaleY: 1.02,
+      footStride: null,
+      openBeak: 0,
+      hydrationDrop: 0,
+    };
+  }
 
   if (actionSet === 2 || actionSet === 3) {
     return {
       dx: Math.round(counterWave),
       dy: Math.round(Math.max(0, wave)),
       shear: -0.07 + wave * 0.02,
+      scaleX: 1,
+      scaleY: 1,
+      footStride: null,
       openBeak: 0,
+      hydrationDrop: 0,
     };
   }
 
@@ -389,7 +559,11 @@ function poseForFrame(frameName: string): Pose {
       dx: 0,
       dy: -1 + Math.round(counterWave),
       shear: wave * 0.025,
+      scaleX: 1,
+      scaleY: 1,
+      footStride: null,
       openBeak: index % 2 === 0 ? 0.75 : 0.25,
+      hydrationDrop: 0,
     };
   }
 
@@ -397,7 +571,11 @@ function poseForFrame(frameName: string): Pose {
     dx: 0,
     dy: Math.round(wave),
     shear: wave * 0.015,
+    scaleX: 1,
+    scaleY: 1,
+    footStride: null,
     openBeak: 0,
+    hydrationDrop: 0,
   };
 }
 

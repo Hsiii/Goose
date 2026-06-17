@@ -10,9 +10,11 @@ export const GOOSE_RENDERING = {
   floorOffset: 120,
   animationSpeed: {
     idle: 0.07,
-    walk: 0.11,
+    walk: 0.13,
+    turn: 0.12,
     inspect: 0.08,
-    honk: 0.1,
+    honk: 0.12,
+    hydrate: 0.1,
     alert: 0.12,
   },
 } as const;
@@ -31,6 +33,14 @@ const animationFrames = {
     "goose_walk_3",
     "goose_walk_4",
     "goose_walk_5",
+    "goose_walk_6",
+    "goose_walk_7",
+  ],
+  turn: [
+    "goose_actions_4",
+    "goose_actions_5",
+    "goose_actions_6",
+    "goose_actions_7",
   ],
   inspect: [
     "goose_actions_8",
@@ -44,12 +54,20 @@ const animationFrames = {
     "goose_reminders_2",
     "goose_reminders_3",
     "goose_reminders_4",
+    "goose_reminders_5",
   ],
-  alert: [
+  hydrate: [
     "goose_reminders_6",
     "goose_reminders_7",
     "goose_reminders_8",
     "goose_reminders_9",
+    "goose_reminders_10",
+  ],
+  alert: [
+    "goose_reminders_10",
+    "goose_reminders_11",
+    "goose_reminders_12",
+    "goose_reminders_13",
   ],
 } satisfies Record<GooseAnimationKey, string[]>;
 

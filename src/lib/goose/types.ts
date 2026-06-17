@@ -1,5 +1,11 @@
 export type GooseDirection = -1 | 1;
-export type GooseMotionState = "idle" | "walk" | "inspect" | "honk";
+export type GooseMotionState =
+  | "idle"
+  | "walk"
+  | "turn"
+  | "inspect"
+  | "honk"
+  | "hydrate";
 export type GooseAnimationKey = GooseMotionState | "alert";
 
 export interface BootstrapState {

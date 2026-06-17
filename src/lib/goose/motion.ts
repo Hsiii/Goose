@@ -81,6 +81,37 @@ function nextHonkState(
   };
 }
 
+function nextHydrateState(
+  snapshot: GooseMotionSnapshot,
+  bounds: GooseMotionBounds,
+): GooseMotionSnapshot {
+  return {
+    ...settleAtFloor(snapshot, bounds),
+    targetX: snapshot.x,
+    speed: 0,
+    state: "hydrate",
+    stateTimerMs: 0,
+    stateDurationMs: randomBetween(1200, 1900),
+  };
+}
+
+function createWalkSnapshot(
+  snapshot: GooseMotionSnapshot,
+  bounds: GooseMotionBounds,
+  targetX: number,
+  direction: GooseDirection,
+): GooseMotionSnapshot {
+  return {
+    ...settleAtFloor(snapshot, bounds),
+    targetX,
+    direction,
+    speed: randomBetween(42, 68),
+    state: "walk",
+    stateTimerMs: 0,
+    stateDurationMs: randomBetween(3200, 5400),
+  };
+}
+
 function nextWalkState(
   snapshot: GooseMotionSnapshot,
   bounds: GooseMotionBounds,
@@ -88,11 +119,28 @@ function nextWalkState(
   const targetX = pickTargetX(bounds);
   const direction: GooseDirection = targetX >= snapshot.x ? 1 : -1;
 
+  if (direction !== snapshot.direction) {
+    return {
+      ...settleAtFloor(snapshot, bounds),
+      targetX,
+      direction,
+      speed: randomBetween(42, 68),
+      state: "turn",
+      stateTimerMs: 0,
+      stateDurationMs: 420,
+    };
+  }
+
+  return createWalkSnapshot(snapshot, bounds, targetX, direction);
+}
+
+function resumeWalkAfterTurn(
+  snapshot: GooseMotionSnapshot,
+  bounds: GooseMotionBounds,
+): GooseMotionSnapshot {
   return {
     ...settleAtFloor(snapshot, bounds),
-    targetX,
-    direction,
-    speed: randomBetween(38, 62),
+    speed: snapshot.speed || randomBetween(42, 68),
     state: "walk",
     stateTimerMs: 0,
     stateDurationMs: randomBetween(3200, 5400),
@@ -105,7 +153,11 @@ function nextAmbientState(
 ): GooseMotionSnapshot {
   const roll = Math.random();
 
-  if (roll > 0.76) {
+  if (roll > 0.88) {
+    return nextHydrateState(snapshot, bounds);
+  }
+
+  if (roll > 0.72) {
     return nextHonkState(snapshot, bounds);
   }
 
@@ -158,8 +210,18 @@ export function tickGooseMotion(
           ? 0.013
           : snapshot.state === "inspect"
             ? 0.0045
-            : 0.0028),
+            : snapshot.state === "turn"
+              ? 0.01
+              : 0.0028),
   };
+
+  if (nextSnapshot.state === "turn") {
+    if (nextSnapshot.stateTimerMs >= nextSnapshot.stateDurationMs) {
+      return resumeWalkAfterTurn(nextSnapshot, bounds);
+    }
+
+    return settleAtFloor(nextSnapshot, bounds);
+  }
 
   if (nextSnapshot.state === "walk") {
     const distance = nextSnapshot.targetX - nextSnapshot.x;
@@ -189,7 +251,11 @@ export function tickGooseMotion(
     return settleAtFloor(nextSnapshot, bounds);
   }
 
-  if (nextSnapshot.state === "inspect" || nextSnapshot.state === "honk") {
+  if (
+    nextSnapshot.state === "inspect" ||
+    nextSnapshot.state === "honk" ||
+    nextSnapshot.state === "hydrate"
+  ) {
     return Math.random() > 0.35
       ? nextWalkState(nextSnapshot, bounds)
       : nextIdleState(nextSnapshot, bounds);

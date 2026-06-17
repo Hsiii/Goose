@@ -14,9 +14,11 @@ Clip definitions live in `src/lib/goose/animationManifest.ts`.
 Current clips:
 
 - `idle`: ambient standing frames from `goose_actions`.
-- `walk`: movement frames from `goose_walk`.
+- `walk`: 8-frame right-facing walking cadence from `goose_walk`.
+- `turn`: narrow pivot frames from `goose_actions`.
 - `inspect`: looking or foraging frames from `goose_actions`.
-- `honk`: reminder-style frames from `goose_reminders`.
+- `honk`: open-beak attention frames from `goose_reminders`.
+- `hydrate`: hydration reminder frames with a small attached water drop from `goose_reminders`.
 - `alert`: reserved reminder state for future hydration or posture prompts.
 
 ## Validation
