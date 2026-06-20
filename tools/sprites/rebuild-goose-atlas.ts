@@ -85,6 +85,17 @@ const orangeShade: Color = { r: 151, g: 67, b: 33, a: 255 };
 const water: Color = { r: 77, g: 165, b: 236, a: 255 };
 const waterShade: Color = { r: 31, g: 103, b: 185, a: 255 };
 
+const idlePose: Pose = {
+  dx: 0,
+  dy: 0,
+  shear: 0,
+  scaleX: 1,
+  scaleY: 1,
+  footStride: null,
+  openBeak: 0,
+  hydrationDrop: 0,
+};
+
 for (let index = 0; index < sheet.data.length; index += 4) {
   sheet.data[index] = transparent.r;
   sheet.data[index + 1] = transparent.g;
@@ -497,6 +508,10 @@ function poseForFrame(frameName: string): Pose {
   const counterWave = Math.cos(cycle * Math.PI * 2);
 
   if (frameName.startsWith("goose_walk_")) {
+    if (index % 4 === 0) {
+      return idlePose;
+    }
+
     return {
       dx: Math.round(counterWave * 2),
       dy: Math.round(wave * 2),
@@ -510,73 +525,78 @@ function poseForFrame(frameName: string): Pose {
   }
 
   if (frameName.startsWith("goose_reminders_")) {
-    const hydration = index >= 6;
+    const reminderPose = [
+      idlePose,
+      { ...idlePose, dy: -1, shear: 0.015, openBeak: 0.35 },
+      { ...idlePose, dy: -2, shear: 0.025, openBeak: 0.95 },
+      { ...idlePose, dy: -2, shear: 0.015, openBeak: 0.8 },
+      { ...idlePose, dy: -1, shear: 0.01, openBeak: 0.3 },
+      idlePose,
+      idlePose,
+      { ...idlePose, dy: -1, shear: -0.015, hydrationDrop: 0.55 },
+      { ...idlePose, dy: -2, shear: -0.025, hydrationDrop: 1 },
+      { ...idlePose, dy: -1, shear: -0.015, hydrationDrop: 0.65 },
+      idlePose,
+      { ...idlePose, dy: -1, shear: 0.02, openBeak: 0.45 },
+      { ...idlePose, dy: -2, shear: 0.025, openBeak: 0.85 },
+      idlePose,
+    ][index];
 
-    return {
-      dx: 0,
-      dy: Math.round(wave * 1.5) - 1,
-      shear: counterWave * 0.025,
-      scaleX: 1,
-      scaleY: 1,
-      footStride: null,
-      openBeak: hydration ? 0.1 : 0.35 + Math.max(0, wave) * 0.65,
-      hydrationDrop: hydration ? 0.6 + Math.max(0, wave) * 0.4 : 0,
-    };
+    return reminderPose ?? idlePose;
   }
 
   const actionSet = Math.floor(index / 4);
+  const actionFrame = index % 4;
+
+  if (actionSet === 0) {
+    return (
+      [
+        idlePose,
+        { ...idlePose, dy: -1, shear: 0.01 },
+        { ...idlePose, dy: -2, shear: 0.015 },
+        idlePose,
+      ][actionFrame] ?? idlePose
+    );
+  }
 
   if (actionSet === 1) {
-    const turnScale = [1, 0.72, 0.44, 0.72][index % 4] ?? 1;
+    const turnScale = [1, 0.72, 0.44, 1][actionFrame] ?? 1;
 
     return {
-      dx: 0,
-      dy: Math.round(Math.abs(wave)),
-      shear: wave * 0.02,
+      ...idlePose,
+      dy: actionFrame === 0 || actionFrame === 3 ? 0 : 1,
+      shear: actionFrame === 0 || actionFrame === 3 ? 0 : wave * 0.02,
       scaleX: turnScale,
-      scaleY: 1.02,
-      footStride: null,
-      openBeak: 0,
-      hydrationDrop: 0,
+      scaleY: actionFrame === 0 || actionFrame === 3 ? 1 : 1.02,
     };
   }
 
   if (actionSet === 2 || actionSet === 3) {
-    return {
-      dx: Math.round(counterWave),
-      dy: Math.round(Math.max(0, wave)),
-      shear: -0.07 + wave * 0.02,
-      scaleX: 1,
-      scaleY: 1,
-      footStride: null,
-      openBeak: 0,
-      hydrationDrop: 0,
-    };
+    return (
+      [
+        idlePose,
+        { ...idlePose, dx: 1, dy: 1, shear: -0.055 },
+        { ...idlePose, dx: 1, dy: 2, shear: -0.075 },
+        idlePose,
+      ][actionFrame] ?? idlePose
+    );
   }
 
   if (actionSet >= 4) {
     return {
-      dx: 0,
-      dy: -1 + Math.round(counterWave),
-      shear: wave * 0.025,
-      scaleX: 1,
-      scaleY: 1,
-      footStride: null,
-      openBeak: index % 2 === 0 ? 0.75 : 0.25,
-      hydrationDrop: 0,
+      ...idlePose,
+      dy: actionFrame === 0 || actionFrame === 3 ? 0 : -1,
+      shear: actionFrame === 0 || actionFrame === 3 ? 0 : wave * 0.025,
+      openBeak:
+        actionFrame === 0 || actionFrame === 3
+          ? 0
+          : index % 2 === 0
+            ? 0.75
+            : 0.25,
     };
   }
 
-  return {
-    dx: 0,
-    dy: Math.round(wave),
-    shear: wave * 0.015,
-    scaleX: 1,
-    scaleY: 1,
-    footStride: null,
-    openBeak: 0,
-    hydrationDrop: 0,
-  };
+  return idlePose;
 }
 
 for (const [frameName, { frame }] of Object.entries(atlas.frames)) {

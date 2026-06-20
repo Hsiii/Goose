@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PNG } from "pngjs";
+import { animationFrames } from "../../src/lib/goose/animationManifest";
 
 interface AtlasFrame {
   frame: {
@@ -38,6 +39,16 @@ const requiredGroups = {
   goose_actions: 8,
   goose_reminders: 6,
 } as const;
+const idleContactFrame = "goose_actions_0";
+const idleConnectedClips = new Set([
+  "idle",
+  "walk",
+  "turn",
+  "inspect",
+  "honk",
+  "hydrate",
+  "alert",
+]);
 
 const failures: string[] = [];
 
@@ -55,6 +66,56 @@ function alphaAt(x: number, y: number): number {
   return spriteSheet.data[index + 3] ?? 0;
 }
 
+function pixelOffset(
+  frameName: string,
+  localX: number,
+  localY: number,
+): number {
+  const frame = atlas.frames[frameName]?.frame;
+
+  if (!frame) {
+    return -1;
+  }
+
+  return ((frame.y + localY) * spriteSheet.width + frame.x + localX) * 4;
+}
+
+function framesVisuallyConnect(leftFrame: string, rightFrame: string): boolean {
+  let changedPixels = 0;
+  let alphaDelta = 0;
+
+  for (let y = 0; y < 128; y += 1) {
+    for (let x = 0; x < 128; x += 1) {
+      const leftOffset = pixelOffset(leftFrame, x, y);
+      const rightOffset = pixelOffset(rightFrame, x, y);
+
+      if (leftOffset < 0 || rightOffset < 0) {
+        return false;
+      }
+
+      let pixelChanged = false;
+
+      for (let channel = 0; channel < 4; channel += 1) {
+        if (
+          spriteSheet.data[leftOffset + channel] !==
+          spriteSheet.data[rightOffset + channel]
+        ) {
+          pixelChanged = true;
+        }
+      }
+
+      if (pixelChanged) {
+        changedPixels += 1;
+        alphaDelta += Math.abs(
+          spriteSheet.data[leftOffset + 3] - spriteSheet.data[rightOffset + 3],
+        );
+      }
+    }
+  }
+
+  return changedPixels <= 128 && alphaDelta <= 512;
+}
+
 for (const [group, minimumFrames] of Object.entries(requiredGroups)) {
   const frameCount = Object.keys(atlas.frames).filter((frameName) =>
     frameName.startsWith(`${group}_`),
@@ -64,6 +125,33 @@ for (const [group, minimumFrames] of Object.entries(requiredGroups)) {
     failures.push(
       `${group} has ${frameCount} frame(s), expected at least ${minimumFrames}`,
     );
+  }
+}
+
+for (const [clipName, frameNames] of Object.entries(animationFrames)) {
+  for (const frameName of frameNames) {
+    if (!atlas.frames[frameName]) {
+      failures.push(`${clipName} references missing frame ${frameName}`);
+    }
+  }
+
+  if (!idleConnectedClips.has(clipName)) {
+    continue;
+  }
+
+  const firstFrame = frameNames.at(0);
+  const lastFrame = frameNames.at(-1);
+
+  if (firstFrame && !framesVisuallyConnect(firstFrame, idleContactFrame)) {
+    failures.push(`${clipName} first frame does not connect to idle`);
+  }
+
+  if (
+    clipName !== "walk" &&
+    lastFrame &&
+    !framesVisuallyConnect(lastFrame, idleContactFrame)
+  ) {
+    failures.push(`${clipName} last frame does not connect to idle`);
   }
 }
 

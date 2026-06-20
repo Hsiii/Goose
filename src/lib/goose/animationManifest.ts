@@ -19,7 +19,7 @@ export const GOOSE_RENDERING = {
   },
 } as const;
 
-const animationFrames = {
+export const animationFrames = {
   idle: [
     "goose_actions_0",
     "goose_actions_1",
