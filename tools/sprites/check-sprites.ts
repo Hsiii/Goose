@@ -49,6 +49,7 @@ const idleConnectedClips = new Set([
   "hydrate",
   "alert",
 ]);
+const manifestFrameNames = new Set(Object.values(animationFrames).flat());
 
 const failures: string[] = [];
 
@@ -125,6 +126,12 @@ for (const [group, minimumFrames] of Object.entries(requiredGroups)) {
     failures.push(
       `${group} has ${frameCount} frame(s), expected at least ${minimumFrames}`,
     );
+  }
+}
+
+for (const frameName of Object.keys(atlas.frames)) {
+  if (!manifestFrameNames.has(frameName)) {
+    failures.push(`${frameName} is not used by any animation clip`);
   }
 }
 
