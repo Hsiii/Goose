@@ -50,6 +50,7 @@ interface Pose {
   footStride: number | null;
   openBeak: number;
   hydrationDrop: number;
+  rearView?: number;
 }
 
 interface Placement {
@@ -82,6 +83,8 @@ const transparent: Color = { r: 0, g: 0, b: 0, a: 0 };
 const outline: Color = { r: 0, g: 0, b: 0, a: 255 };
 const orange: Color = { r: 224, g: 94, b: 24, a: 255 };
 const orangeShade: Color = { r: 151, g: 67, b: 33, a: 255 };
+const featherWhite: Color = { r: 248, g: 248, b: 244, a: 255 };
+const featherShade: Color = { r: 176, g: 184, b: 188, a: 255 };
 const water: Color = { r: 77, g: 165, b: 236, a: 255 };
 const waterShade: Color = { r: 31, g: 103, b: 185, a: 255 };
 
@@ -242,6 +245,21 @@ const feetBounds = findBounds((x, y) => {
     color.b < 90
   );
 });
+
+function isBeakPixel(x: number, y: number): boolean {
+  const color = getReferencePixel(x, y);
+
+  return (
+    x >= beakBounds.x &&
+    x <= beakBounds.x + beakBounds.width &&
+    y >= beakBounds.y &&
+    y <= beakBounds.y + beakBounds.height &&
+    color.r > 140 &&
+    color.g > 45 &&
+    color.g < 150 &&
+    color.b < 90
+  );
+}
 
 function isFootPixel(x: number, y: number): boolean {
   const color = getReferencePixel(x, y);
@@ -409,6 +427,75 @@ function fillEllipse(
   }
 }
 
+function drawRearTurnDetails(placement: Placement, amount = 0): void {
+  if (amount <= 0) {
+    return;
+  }
+
+  const rear = mapPoint(
+    {
+      x: spriteBounds.x + spriteBounds.width * 0.28,
+      y: spriteBounds.y + spriteBounds.height * 0.72,
+    },
+    placement,
+  );
+  const centerX = Math.round(rear.x + amount * 4);
+  const centerY = Math.round(rear.y + amount * 2);
+  const radiusX = 9 + Math.round(amount * 4);
+  const radiusY = 8 + Math.round(amount * 2);
+
+  fillEllipse(centerX, centerY, radiusX + 2, radiusY + 2, outline);
+  fillEllipse(centerX, centerY, radiusX, radiusY, featherWhite);
+  fillPolygon(
+    [
+      { x: centerX + 2, y: centerY - radiusY + 3 },
+      { x: centerX + 6, y: centerY - 1 },
+      { x: centerX + 3, y: centerY + radiusY - 3 },
+      { x: centerX + 1, y: centerY + radiusY - 4 },
+      { x: centerX + 3, y: centerY },
+      { x: centerX, y: centerY - radiusY + 4 },
+    ],
+    featherShade,
+  );
+
+  const tailBaseX = centerX - radiusX + 1;
+  const tailBaseY = centerY - 1;
+  const tailReach = 9 + Math.round(amount * 5);
+
+  fillPolygon(
+    [
+      { x: tailBaseX, y: tailBaseY - 7 },
+      { x: tailBaseX - tailReach, y: tailBaseY - 13 },
+      { x: tailBaseX - 3, y: tailBaseY },
+    ],
+    outline,
+  );
+  fillPolygon(
+    [
+      { x: tailBaseX + 2, y: tailBaseY - 5 },
+      { x: tailBaseX - tailReach + 3, y: tailBaseY - 10 },
+      { x: tailBaseX - 1, y: tailBaseY },
+    ],
+    featherWhite,
+  );
+  fillPolygon(
+    [
+      { x: tailBaseX, y: tailBaseY + 2 },
+      { x: tailBaseX - tailReach, y: tailBaseY + 7 },
+      { x: tailBaseX - 3, y: tailBaseY - 3 },
+    ],
+    outline,
+  );
+  fillPolygon(
+    [
+      { x: tailBaseX + 2, y: tailBaseY + 1 },
+      { x: tailBaseX - tailReach + 3, y: tailBaseY + 5 },
+      { x: tailBaseX - 1, y: tailBaseY - 2 },
+    ],
+    featherWhite,
+  );
+}
+
 function drawHydrationDrop(placement: Placement, amount: number): void {
   if (amount <= 0) {
     return;
@@ -487,7 +574,8 @@ function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
         sourceY < spriteBounds.y ||
         sourceY >= spriteBounds.y + spriteBounds.height ||
         !isSpritePixel(sourceX, sourceY) ||
-        (pose.footStride !== null && isFootPixel(sourceX, sourceY))
+        (pose.footStride !== null && isFootPixel(sourceX, sourceY)) ||
+        ((pose.rearView ?? 0) > 0 && isBeakPixel(sourceX, sourceY))
       ) {
         continue;
       }
@@ -497,6 +585,7 @@ function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
   }
 
   drawPoseFeet(placement, pose);
+  drawRearTurnDetails(placement, pose.rearView);
   drawOpenBeak(placement, pose.openBeak);
   drawHydrationDrop(placement, pose.hydrationDrop);
 }
@@ -562,8 +651,24 @@ function poseForFrame(frameName: string): Pose {
   if (actionSet === 1) {
     const turnPose = [
       idlePose,
-      { ...idlePose, dx: -2, dy: 1, shear: -0.14, scaleX: 0.84, scaleY: 1.03 },
-      { ...idlePose, dx: 2, dy: 2, shear: 0.18, scaleX: 0.68, scaleY: 1.05 },
+      {
+        ...idlePose,
+        dx: -2,
+        dy: 1,
+        shear: -0.12,
+        scaleX: 0.92,
+        scaleY: 1.03,
+        rearView: 0.45,
+      },
+      {
+        ...idlePose,
+        dx: 2,
+        dy: 2,
+        shear: 0.08,
+        scaleX: 0.82,
+        scaleY: 1.05,
+        rearView: 1,
+      },
       idlePose,
     ][actionFrame];
 
