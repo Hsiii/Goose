@@ -560,15 +560,14 @@ function poseForFrame(frameName: string): Pose {
   }
 
   if (actionSet === 1) {
-    const turnScale = [1, 0.6, 0.28, 1][actionFrame] ?? 1;
+    const turnPose = [
+      idlePose,
+      { ...idlePose, dx: -2, dy: 1, shear: -0.14, scaleX: 0.84, scaleY: 1.03 },
+      { ...idlePose, dx: 2, dy: 2, shear: 0.18, scaleX: 0.68, scaleY: 1.05 },
+      idlePose,
+    ][actionFrame];
 
-    return {
-      ...idlePose,
-      dy: actionFrame === 0 || actionFrame === 3 ? 0 : 2,
-      shear: actionFrame === 0 || actionFrame === 3 ? 0 : wave * 0.05,
-      scaleX: turnScale,
-      scaleY: actionFrame === 0 || actionFrame === 3 ? 1 : 1.02,
-    };
+    return turnPose ?? idlePose;
   }
 
   if (actionSet === 2 || actionSet === 3) {

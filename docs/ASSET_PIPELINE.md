@@ -15,7 +15,7 @@ Current clips:
 
 - `idle`: 4-frame ambient standing cycle from `goose_actions`.
 - `walk`: 8-frame right-facing walking cadence from `goose_walk`.
-- `turn`: 4-frame narrow pivot cycle from `goose_actions`.
+- `turn`: 4-frame 3/4 pivot cycle from `goose_actions`.
 - `inspect`: 4-frame looking or foraging cycle from `goose_actions`.
 - `honk`: 6-frame open-beak attention cycle from `goose_reminders`.
 - `hydrate`: 5-frame hydration reminder cycle with a small attached water drop from `goose_reminders`.
