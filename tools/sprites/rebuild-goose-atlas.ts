@@ -334,13 +334,13 @@ function drawOpenBeak(placement: Placement, amount: number): void {
   const hingeX = Math.round(beakStart.x + 3);
   const hingeY = Math.round(beakEnd.y - 2);
   const tipX = Math.round(beakEnd.x - 1);
-  const tipY = Math.round(beakEnd.y + 2 + amount * 6);
+  const tipY = Math.round(beakEnd.y + 3 + amount * 12);
 
   fillPolygon(
     [
       { x: hingeX - 1, y: hingeY - 1 },
-      { x: tipX + 2, y: tipY },
-      { x: hingeX - 2, y: hingeY + 5 },
+      { x: tipX + 3, y: tipY },
+      { x: hingeX - 2, y: hingeY + 7 },
     ],
     outline,
   );
@@ -348,7 +348,7 @@ function drawOpenBeak(placement: Placement, amount: number): void {
     [
       { x: hingeX, y: hingeY },
       { x: tipX, y: tipY },
-      { x: hingeX, y: hingeY + 3 },
+      { x: hingeX, y: hingeY + 5 },
     ],
     amount > 0.6 ? orangeShade : orange,
   );
@@ -421,29 +421,29 @@ function drawHydrationDrop(placement: Placement, amount: number): void {
     },
     placement,
   );
-  const x = Math.round(beakEnd.x + 8);
-  const y = Math.round(beakEnd.y + 7 - amount * 2);
-  const height = 9 + Math.round(amount * 3);
+  const x = Math.round(beakEnd.x + 10);
+  const y = Math.round(beakEnd.y + 9 - amount * 3);
+  const height = 11 + Math.round(amount * 5);
 
   fillPolygon(
     [
       { x, y: y - height },
-      { x: x + 8, y: y - 2 },
-      { x, y: y + 6 },
-      { x: x - 8, y: y - 2 },
+      { x: x + 10, y: y - 2 },
+      { x, y: y + 8 },
+      { x: x - 10, y: y - 2 },
     ],
     outline,
   );
   fillPolygon(
     [
       { x, y: y - height + 2 },
-      { x: x + 5, y: y - 2 },
-      { x, y: y + 3 },
-      { x: x - 5, y: y - 2 },
+      { x: x + 7, y: y - 2 },
+      { x, y: y + 5 },
+      { x: x - 7, y: y - 2 },
     ],
     water,
   );
-  fillEllipse(x + 2, y - 2, 2, 3, waterShade);
+  fillEllipse(x + 3, y - 2, 3, 4, waterShade);
 }
 
 function drawReferenceSprite(frame: AtlasFrame["frame"], pose: Pose): void {
@@ -513,12 +513,12 @@ function poseForFrame(frameName: string): Pose {
     }
 
     return {
-      dx: Math.round(counterWave * 2),
-      dy: Math.round(wave * 2),
-      shear: wave * 0.055,
+      dx: Math.round(counterWave * 4),
+      dy: Math.round(wave * 4),
+      shear: wave * 0.11,
       scaleX: 1,
       scaleY: 1,
-      footStride: Math.round(wave * 5),
+      footStride: Math.round(wave * 9),
       openBeak: 0,
       hydrationDrop: 0,
     };
@@ -527,18 +527,18 @@ function poseForFrame(frameName: string): Pose {
   if (frameName.startsWith("goose_reminders_")) {
     const reminderPose = [
       idlePose,
-      { ...idlePose, dy: -1, shear: 0.015, openBeak: 0.35 },
-      { ...idlePose, dy: -2, shear: 0.025, openBeak: 0.95 },
-      { ...idlePose, dy: -2, shear: 0.015, openBeak: 0.8 },
-      { ...idlePose, dy: -1, shear: 0.01, openBeak: 0.3 },
+      { ...idlePose, dy: -2, shear: 0.05, scaleY: 1.03, openBeak: 0.45 },
+      { ...idlePose, dy: -4, shear: 0.08, scaleY: 1.05, openBeak: 1 },
+      { ...idlePose, dy: -3, shear: 0.04, scaleY: 1.04, openBeak: 0.85 },
+      { ...idlePose, dy: -1, shear: 0.02, openBeak: 0.35 },
       idlePose,
       idlePose,
-      { ...idlePose, dy: -1, shear: -0.015, hydrationDrop: 0.55 },
-      { ...idlePose, dy: -2, shear: -0.025, hydrationDrop: 1 },
-      { ...idlePose, dy: -1, shear: -0.015, hydrationDrop: 0.65 },
+      { ...idlePose, dx: -1, dy: 1, shear: -0.06, hydrationDrop: 0.65 },
+      { ...idlePose, dx: -2, dy: 2, shear: -0.1, hydrationDrop: 1 },
+      { ...idlePose, dx: -1, dy: 1, shear: -0.06, hydrationDrop: 0.75 },
       idlePose,
-      { ...idlePose, dy: -1, shear: 0.02, openBeak: 0.45 },
-      { ...idlePose, dy: -2, shear: 0.025, openBeak: 0.85 },
+      { ...idlePose, dy: -2, shear: 0.05, scaleY: 1.03, openBeak: 0.55 },
+      { ...idlePose, dy: -4, shear: 0.08, scaleY: 1.05, openBeak: 0.95 },
       idlePose,
     ][index];
 
@@ -552,20 +552,20 @@ function poseForFrame(frameName: string): Pose {
     return (
       [
         idlePose,
-        { ...idlePose, dy: -1, shear: 0.01 },
-        { ...idlePose, dy: -2, shear: 0.015 },
+        { ...idlePose, dy: -2, shear: 0.025, scaleY: 1.02 },
+        { ...idlePose, dy: -4, shear: -0.025, scaleY: 1.04 },
         idlePose,
       ][actionFrame] ?? idlePose
     );
   }
 
   if (actionSet === 1) {
-    const turnScale = [1, 0.72, 0.44, 1][actionFrame] ?? 1;
+    const turnScale = [1, 0.6, 0.28, 1][actionFrame] ?? 1;
 
     return {
       ...idlePose,
-      dy: actionFrame === 0 || actionFrame === 3 ? 0 : 1,
-      shear: actionFrame === 0 || actionFrame === 3 ? 0 : wave * 0.02,
+      dy: actionFrame === 0 || actionFrame === 3 ? 0 : 2,
+      shear: actionFrame === 0 || actionFrame === 3 ? 0 : wave * 0.05,
       scaleX: turnScale,
       scaleY: actionFrame === 0 || actionFrame === 3 ? 1 : 1.02,
     };
@@ -575,8 +575,8 @@ function poseForFrame(frameName: string): Pose {
     return (
       [
         idlePose,
-        { ...idlePose, dx: 1, dy: 1, shear: -0.055 },
-        { ...idlePose, dx: 1, dy: 2, shear: -0.075 },
+        { ...idlePose, dx: 4, dy: 2, shear: -0.16, scaleY: 0.98 },
+        { ...idlePose, dx: 7, dy: 5, shear: -0.24, scaleY: 0.94 },
         idlePose,
       ][actionFrame] ?? idlePose
     );
@@ -585,8 +585,8 @@ function poseForFrame(frameName: string): Pose {
   if (actionSet >= 4) {
     return {
       ...idlePose,
-      dy: actionFrame === 0 || actionFrame === 3 ? 0 : -1,
-      shear: actionFrame === 0 || actionFrame === 3 ? 0 : wave * 0.025,
+      dy: actionFrame === 0 || actionFrame === 3 ? 0 : -3,
+      shear: actionFrame === 0 || actionFrame === 3 ? 0 : wave * 0.07,
       openBeak:
         actionFrame === 0 || actionFrame === 3
           ? 0
